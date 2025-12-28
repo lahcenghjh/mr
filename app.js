@@ -1,65 +1,115 @@
 const { useState, useEffect } = React;
 
+const missions = [
+  {
+    title: "Mission 1 – Authentication",
+    stages: [
+      {
+        q: "وش هو أكبر خطر كي نقارن القيم مباشرة؟",
+        options: ["Bruteforce", "SQL Injection", "DDoS"],
+        correct: 1,
+        explain: "SQL Injection يصير كي المدخلات ما تكونش محمية."
+      },
+      {
+        q: "اختَر محاولة Login خطيرة:",
+        options: [
+          "admin / 1234",
+          "admin' / anything",
+          "user / user"
+        ],
+        correct: 1,
+        explain: "العلامة ' تقدر تكسر منطق التحقق."
+      },
+      {
+        q: "وش هو الحل الصحيح؟",
+        options: [
+          "نثق في المستخدم",
+          "Prepared Statements",
+          "نخفي رسالة الخطأ"
+        ],
+        correct: 1,
+        explain: "Prepared Statements تمنع التلاعب."
+      }
+    ]
+  },
+  {
+    title: "Mission 2 – Input Validation",
+    stages: [
+      {
+        q: "وين يصير الخطر؟",
+        options: ["Input", "Database", "Server Hardware"],
+        correct: 0,
+        explain: "التحقق يبدأ من Input."
+      },
+      {
+        q: "وش السلوك الخطير؟",
+        options: [
+          "عرض المحتوى مباشرة",
+          "تنظيف المدخلات",
+          "استعمال Escape"
+        ],
+        correct: 0,
+        explain: "عرض المحتوى بلا تنظيف خطر."
+      }
+    ]
+  }
+];
+
 function App() {
-  const [screen, setScreen] = useState("login");
-  const [time, setTime] = useState(60);
-  const [input, setInput] = useState("");
+  const [mission, setMission] = useState(0);
+  const [stage, setStage] = useState(0);
+  const [time, setTime] = useState(120);
   const [msg, setMsg] = useState("");
 
-  // TIMER
   useEffect(() => {
-    if (screen !== "level") return;
-    if (time <= 0) {
-      setMsg("❌ الوقت سالى!");
-      return;
-    }
+    if (time <= 0) return;
     const t = setTimeout(() => setTime(time - 1), 1000);
     return () => clearTimeout(t);
-  }, [time, screen]);
+  }, [time]);
 
-  function checkPayload() {
-    // محاكاة تفكير أمني (مش اختراق حقيقي)
-    if (input.includes("'") || input.toLowerCase().includes("or")) {
-      setMsg("✅ نجحت! فهمت الفكرة.");
-      localStorage.setItem("level1", "done");
+  const current = missions[mission].stages[stage];
+
+  function choose(i) {
+    if (i === current.correct) {
+      setMsg("✅ صحيح");
+      if (stage + 1 < missions[mission].stages.length) {
+        setTimeout(() => {
+          setStage(stage + 1);
+          setMsg("");
+        }, 800);
+      } else if (mission + 1 < missions.length) {
+        setTimeout(() => {
+          setMission(mission + 1);
+          setStage(0);
+          setMsg("");
+        }, 1000);
+      } else {
+        setMsg("🎉 كملت كل المراحل!");
+      }
     } else {
-      setMsg("❌ خطأ. جرّب تفكّر اكثر.");
-      setTime(time - 5);
+      setMsg("❌ خطأ");
+      setTime(time - 10);
     }
   }
 
-  // LOGIN (وهمي)
-  if (screen === "login") {
-    return (
-      <div className="center">
-        <div className="card">
-          <h2 className="title">CYBERPRESSURE</h2>
-          <input placeholder="Username" />
-          <input type="password" placeholder="Password" />
-          <button onClick={() => setScreen("level")}>CONNECT</button>
-        </div>
-      </div>
-    );
-  }
-
-  // LEVEL 1
   return (
     <div className={`center ${time <= 10 ? "shake" : ""}`}>
       <div className="card">
-        <div className="timer">⏱️ الوقت: {time}s</div>
-        <h3>Level 1 – Auth Bypass (Simulation)</h3>
-        <p>راك قدّام Login وهمي. كيفاش تفكّر تدخل؟</p>
+        <div className="timer">⏱️ {time}s</div>
+        <h3>{missions[mission].title}</h3>
+        <p>{current.q}</p>
 
-        <input
-          placeholder="اكتب فكرتك هنا"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-        />
-
-        <button onClick={checkPayload}>SUBMIT</button>
+        {current.options.map((op, i) => (
+          <button key={i} onClick={() => choose(i)}>
+            {op}
+          </button>
+        ))}
 
         <div className="terminal">
-          {msg || "Terminal: استعمل مخّك، مش أدوات."}
+          {msg || "اختَر الإجابة الصحيحة."}
+          {msg === "✅ صحيح" && (
+            <div>📘 {current.explain}</div>
+          )}
         </div>
       </div>
     </div>
